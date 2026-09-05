@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-09-05T22:40:00+09:00",
+  "os": "Windows (PowerShell; 상세 OS 조회는 샌드박스 권한으로 확인하지 못함)",
+  "cpu": "unavailable (권한 제한으로 측정하지 않음)",
+  "ramBytes": null,
+  "java": "openjdk version 21.0.8 2025-07-15 LTS",
+  "springBoot": "3.5.16",
+  "gradle": "8.12.1",
+  "postgresqlImage": "postgres:16.8-alpine",
+  "redisImage": "redis:7.4.2-alpine",
+  "wiremockImage": "wiremock/wiremock:3.13.1",
+  "k6": "v1.6.1 (stage 1에서는 실행하지 않음)",
+  "dockerCli": "unavailable (권한 제한으로 버전 조회하지 않음)",
+  "dockerComposeCli": "unavailable (권한 제한으로 버전 조회하지 않음)",
+  "notes": "버전과 시스템 정보는 측정된 값만 기록했으며, 성능 측정 결과가 아니다."
+}

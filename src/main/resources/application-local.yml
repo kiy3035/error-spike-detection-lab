@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:error_detection}
+    username: ${DB_USER:error_app}
+    password: ${DB_PASSWORD:local-only-password}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: 1s
+      timeout: 1s
+  flyway:
+    locations: classpath:db/migration,classpath:db/local
+
+management:
+  endpoint:
+    health:
+      show-details: always
