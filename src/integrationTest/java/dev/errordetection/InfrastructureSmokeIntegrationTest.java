@@ -7,6 +7,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import dev.errordetection.infrastructure.notification.NotificationEndpointClient;
+import java.net.URI;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -15,7 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
@@ -95,6 +100,81 @@ class InfrastructureSmokeIntegrationTest {
         var response = restTemplate.getForEntity("/actuator/health", Map.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsEntry("status", "UP");
+    }
+
+    /**
+     * 에러 저장 뒤 서버 수신 시각 기준 이력과 빈 구간을 포함한 추이를 조회합니다.
+     */
+    @Test
+    void savesAndQueriesErrorHistoryAndTrend() {
+        Instant occurredAt = Instant.now().minusSeconds(10);
+        Map<String, Object> request = Map.of(
+                "source", "order-api",
+                "errorCode", "SYNTHETIC_TIMEOUT",
+                "severity", "ERROR",
+                "message", "synthetic integration timeout",
+                "occurredAt", occurredAt.toString(),
+                "traceId", "integration-trace-1",
+                "runId", "stage2-integration"
+        );
+
+        var createResponse = restTemplate.postForEntity("/errors", request, Map.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        Instant receivedAt = Instant.parse(createResponse.getBody().get("receivedAt").toString());
+
+        Instant from = receivedAt.minusSeconds(60);
+        Instant to = receivedAt.plusSeconds(60);
+        URI historyUri = UriComponentsBuilder.fromPath("/errors")
+                .queryParam("source", "order-api")
+                .queryParam("from", from)
+                .queryParam("to", to)
+                .queryParam("page", 0)
+                .queryParam("size", 10)
+                .build()
+                .encode()
+                .toUri();
+        var historyResponse = restTemplate.getForEntity(historyUri, Map.class);
+        assertThat(historyResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(historyResponse.getBody().get("totalElements")).isEqualTo(1);
+
+        URI trendUri = UriComponentsBuilder.fromPath("/errors/trend")
+                .queryParam("source", "order-api")
+                .queryParam("from", from.truncatedTo(ChronoUnit.MINUTES))
+                .queryParam("to", to.truncatedTo(ChronoUnit.MINUTES).plus(1, ChronoUnit.MINUTES))
+                .queryParam("bucket", "MINUTE")
+                .build()
+                .encode()
+                .toUri();
+        var trendResponse = restTemplate.getForEntity(trendUri, Map.class);
+        assertThat(trendResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat((Iterable<?>) trendResponse.getBody().get("points")).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    /**
+     * 허용 크기를 넘는 페이지 요청과 유효하지 않은 본문을 400으로 거부합니다.
+     */
+    @Test
+    void rejectsInvalidInputAndOversizedPage() {
+        Map<String, Object> invalidRequest = Map.of(
+                "source", "invalid source",
+                "errorCode", "INVALID-CODE",
+                "severity", "ERROR",
+                "message", "synthetic invalid request",
+                "occurredAt", Instant.now().toString()
+        );
+        var createResponse = restTemplate.postForEntity("/errors", invalidRequest, Map.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        URI historyUri = UriComponentsBuilder.fromPath("/errors")
+                .queryParam("source", "order-api")
+                .queryParam("from", Instant.now().minusSeconds(60))
+                .queryParam("to", Instant.now().plusSeconds(60))
+                .queryParam("size", 101)
+                .build()
+                .encode()
+                .toUri();
+        var historyResponse = restTemplate.exchange(RequestEntity.get(historyUri).build(), Map.class);
+        assertThat(historyResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     /**

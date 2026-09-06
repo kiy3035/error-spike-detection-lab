@@ -2,6 +2,8 @@
 
 ## 1단계 상태: 완료
 
+## 2단계 상태: 완료
+
 ## 완료한 작업
 
 - [x] Java 21 / Spring Boot 3.5.16 / Gradle Wrapper 8.12.1 프로젝트 생성
@@ -12,6 +14,10 @@
 - [x] WireMock health custom health indicator 구성
 - [x] 단위 테스트와 Docker 기반 통합 smoke 테스트 분리
 - [x] README, `docs/decisions.md`, 환경 정보 작성
+- [x] `POST /errors` 저장 API와 서버 `received_at` 생성
+- [x] `GET /errors` 이력 페이지와 `GET /errors/trend` 추이 API
+- [x] `(source, received_at DESC)` 보조 인덱스
+- [x] 입력 검증, 최대 7일·100건·1000 bucket 제한, 정제된 오류 응답
 
 ## 실제 실행한 테스트와 결과
 
@@ -22,6 +28,8 @@
 | `docker compose config` | 통과 |
 | `docker compose up -d --wait` | PostgreSQL·Redis·WireMock 모두 healthy |
 | local `bootRun` + `scripts/verify-stage1.ps1` | 통과, Actuator `UP`, WireMock health 200, alert stub 202 |
+| 2단계 `gradlew.bat --no-daemon test` | 통과, 단위 테스트 5개 |
+| 2단계 `gradlew.bat --no-daemon integrationTest` | 통과, 통합 테스트 3개 |
 
 통합 테스트에서 Flyway seed 1건, PostgreSQL 조회, Redis SET/GET, WireMock health, Actuator `UP`을 확인했다. 최초 실제 Compose 확인에서는 WireMock 최초 응답이 1초를 넘어 `notificationEndpoint`가 DOWN이 되었고, connect 2초/read 3초로 조정했다. 조정 후 실제 애플리케이션을 재기동해 스크립트로 Actuator `UP`을 확인했다.
 
@@ -33,10 +41,11 @@
 - WireMock `/mock/health`는 200, `/mock/alerts`는 202를 반환한다.
 - 단위·통합 smoke 테스트가 통과한다.
 - 검증 종료 후 애플리케이션 `bootRun` 프로세스는 종료했으며, Compose 인프라는 재현 확인을 위해 현재 실행 중이다. 필요하면 `docker compose down`으로 종료한다.
+- 합성 에러가 PostgreSQL에 저장되고 서버 수신 시각 기준으로 페이지·추이 조회된다.
+- 조회 범위·페이지·bucket 상한과 입력 문자 제한이 적용된다.
 
 ## 미완료 작업과 측정 대기 항목
 
-- 2단계 에러 저장·추이 조회 API
 - 3단계 Redis rolling window와 DB fallback
 - 4단계 cooldown과 비동기 retry 알림
 - 5단계 k6·인덱스·cooldown 성능 실험 및 결과 파일
@@ -50,7 +59,7 @@
 
 ## 다음 작업에서 바로 시작할 내용
 
-1단계 산출물과 실제 Compose health 확인이 완료되었다. 사용자가 명시적으로 계속 진행할 때만 2단계 에러 저장 API를 시작한다.
+2단계 저장·조회·집계 검증이 완료되었다. 다음은 3단계 Redis rolling window와 명시적 가용성 예외 대상 DB fallback이다.
 
 ## 실행 및 재현 명령어
 
@@ -71,6 +80,7 @@ docker compose down
 - `build.gradle`, `settings.gradle`, `gradlew`, `gradlew.bat`, `gradle/wrapper/*`
 - `compose.yaml`, `.env.example`, `.gitignore`, `.gitattributes`
 - `src/main/java/dev/errordetection/*`
+- `src/main/java/dev/errordetection/error/*`, `src/main/java/dev/errordetection/config/TimeConfiguration.java`
 - `src/main/resources/application*.yml`, `src/main/resources/db/*`
 - `src/test/java/*`, `src/integrationTest/java/*`
 - `wiremock/mappings/*`, `scripts/verify-stage1.ps1`
