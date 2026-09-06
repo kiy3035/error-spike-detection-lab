@@ -1,11 +1,24 @@
 package dev.errordetection;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.awaitility.Awaitility.await;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import dev.errordetection.alert.AlertDeliveryRepository;
+import dev.errordetection.alert.AlertStatus;
+import dev.errordetection.alert.DbCooldownGate;
+import dev.errordetection.alert.RedisCooldownGate;
 import dev.errordetection.infrastructure.notification.NotificationEndpointClient;
 import dev.errordetection.counter.RedisBucketCounter;
 import java.net.URI;
@@ -14,8 +27,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -70,6 +85,15 @@ class InfrastructureSmokeIntegrationTest {
     @Autowired
     private RedisBucketCounter redisBucketCounter;
 
+    @Autowired
+    private RedisCooldownGate redisCooldownGate;
+
+    @Autowired
+    private DbCooldownGate dbCooldownGate;
+
+    @Autowired
+    private AlertDeliveryRepository alertDeliveryRepository;
+
     /**
      * Testcontainers와 WireMock의 동적 연결 정보를 Spring 설정에 주입합니다.
      *
@@ -84,7 +108,23 @@ class InfrastructureSmokeIntegrationTest {
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
         registry.add("spring.flyway.locations", () -> "classpath:db/migration,classpath:db/local");
         registry.add("app.notification.base-url", WIRE_MOCK::baseUrl);
+        registry.add("app.notification.read-timeout", () -> "250ms");
+        registry.add("app.alert.threshold", () -> 3);
+        registry.add("app.alert.cooldown-seconds", () -> 1);
         registry.add("management.endpoint.health.show-details", () -> "always");
+    }
+
+    /**
+     * 테스트마다 WireMock journal을 비우고 health 및 기본 성공 endpoint를 다시 구성합니다.
+     */
+    @BeforeEach
+    void resetWireMock() {
+        WIRE_MOCK.resetAll();
+        WIRE_MOCK.stubFor(get(urlPathEqualTo("/mock/health"))
+                .willReturn(okJson("{\"status\":\"UP\"}")));
+        WIRE_MOCK.stubFor(post(urlPathEqualTo("/mock/alerts"))
+                .atPriority(10)
+                .willReturn(aResponse().withStatus(202)));
     }
 
     /**
@@ -218,6 +258,238 @@ class InfrastructureSmokeIntegrationTest {
 
         long finalCount = redisBucketCounter.incrementAndCount("concurrent-api", now);
         assertThat(finalCount).isEqualTo(101L);
+    }
+
+    /**
+     * Redis와 DB cooldown의 동시 요청에서 각각 한 요청만 선점하는지 확인합니다.
+     *
+     * @throws Exception 동시 작업 실패 시 전달되는 예외
+     */
+    @Test
+    void allowsOneConcurrentWinnerForRedisAndDatabaseCooldown() throws Exception {
+        assertThat(concurrentWinners(() -> redisCooldownGate.acquire(
+                "redis-cooldown-api",
+                java.util.UUID.randomUUID()
+        ))).isEqualTo(1L);
+        assertThat(concurrentWinners(() -> dbCooldownGate.acquire(
+                "db-cooldown-api",
+                java.util.UUID.randomUUID()
+        ))).isEqualTo(1L);
+    }
+
+    /**
+     * 세 번째 에러에서 알림 한 건이 비동기로 성공하고 조회 API에 기록되는지 확인합니다.
+     */
+    @Test
+    void sendsOneAlertAsynchronouslyAtThreshold() {
+        String runId = "stage4-e2e";
+        postErrors("e2e-api", runId, 3);
+
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+            var deliveries = alertDeliveryRepository.findAll().stream()
+                    .filter(delivery -> runId.equals(delivery.getRunId()))
+                    .toList();
+            assertThat(deliveries).singleElement()
+                    .satisfies(delivery -> {
+                        assertThat(delivery.getStatus()).isEqualTo(AlertStatus.SENT);
+                        assertThat(delivery.getAttemptCount()).isEqualTo(1);
+                    });
+        });
+        WIRE_MOCK.verify(exactly(1), requestPatternForSource("e2e-api"));
+
+        var response = restTemplate.getForEntity("/alerts?runId=" + runId, Map.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsEntry("totalElements", 1);
+    }
+
+    /**
+     * WireMock 500, 500, 200 순서에서 세 번째 시도에 SENT가 되는지 확인합니다.
+     */
+    @Test
+    void retriesTransientServerErrorsUntilSuccess() {
+        String scenario = "retry-then-success";
+        WIRE_MOCK.stubFor(stubForSource("retry-api")
+                .inScenario(scenario)
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willSetStateTo("SECOND")
+                .willReturn(aResponse().withStatus(500)));
+        WIRE_MOCK.stubFor(stubForSource("retry-api")
+                .inScenario(scenario)
+                .whenScenarioStateIs("SECOND")
+                .willSetStateTo("SUCCESS")
+                .willReturn(aResponse().withStatus(500)));
+        WIRE_MOCK.stubFor(stubForSource("retry-api")
+                .inScenario(scenario)
+                .whenScenarioStateIs("SUCCESS")
+                .willReturn(aResponse().withStatus(200)));
+
+        String runId = "stage4-retry";
+        postErrors("retry-api", runId, 3);
+
+        awaitStatus(runId, AlertStatus.SENT, 3);
+        WIRE_MOCK.verify(exactly(3), requestPatternForSource("retry-api"));
+    }
+
+    /**
+     * 일반 4xx는 재시도하지 않고 첫 시도 뒤 FAILED가 되는지 확인합니다.
+     */
+    @Test
+    void doesNotRetryPermanentClientError() {
+        WIRE_MOCK.stubFor(stubForSource("permanent-api")
+                .atPriority(1)
+                .willReturn(aResponse().withStatus(400)));
+
+        String runId = "stage4-permanent";
+        postErrors("permanent-api", runId, 3);
+
+        awaitStatus(runId, AlertStatus.FAILED, 1);
+        WIRE_MOCK.verify(exactly(1), requestPatternForSource("permanent-api"));
+    }
+
+    /**
+     * 마지막까지 5xx이면 세 번 시도 뒤 Recover가 FAILED를 기록하는지 확인합니다.
+     */
+    @Test
+    void marksFailedAfterTransientRetriesAreExhausted() {
+        WIRE_MOCK.stubFor(stubForSource("failed-api")
+                .atPriority(1)
+                .willReturn(aResponse().withStatus(503)));
+
+        String runId = "stage4-failed";
+        postErrors("failed-api", runId, 3);
+
+        awaitStatus(runId, AlertStatus.FAILED, 3);
+        WIRE_MOCK.verify(exactly(3), requestPatternForSource("failed-api"));
+    }
+
+    /**
+     * HTTP read timeout도 일시적 오류로 분류해 세 번 시도 뒤 FAILED가 되는지 확인합니다.
+     */
+    @Test
+    void retriesReadTimeoutAndMarksFailed() {
+        WIRE_MOCK.stubFor(stubForSource("timeout-alert-api")
+                .atPriority(1)
+                .willReturn(aResponse().withStatus(202).withFixedDelay(500)));
+
+        String runId = "stage4-alert-timeout";
+        postErrors("timeout-alert-api", runId, 3);
+
+        awaitStatus(runId, AlertStatus.FAILED, 3);
+        WIRE_MOCK.verify(exactly(3), requestPatternForSource("timeout-alert-api"));
+    }
+
+    /**
+     * 설정한 TTL이 지나면 Redis와 DB cooldown 모두 다시 선점 가능한지 확인합니다.
+     */
+    @Test
+    void reacquiresRedisAndDatabaseCooldownAfterExpiry() {
+        String redisSource = "redis-expiry-api";
+        String dbSource = "db-expiry-api";
+        assertThat(redisCooldownGate.acquire(redisSource, java.util.UUID.randomUUID())).isTrue();
+        assertThat(dbCooldownGate.acquire(dbSource, java.util.UUID.randomUUID())).isTrue();
+
+        await().atMost(3, TimeUnit.SECONDS).pollDelay(1200, TimeUnit.MILLISECONDS).untilAsserted(() -> {
+            assertThat(redisCooldownGate.acquire(redisSource, java.util.UUID.randomUUID())).isTrue();
+            assertThat(dbCooldownGate.acquire(dbSource, java.util.UUID.randomUUID())).isTrue();
+        });
+    }
+
+    /**
+     * 동일 gate에 50개 동시 호출을 실행해 성공 횟수를 반환합니다.
+     *
+     * @param operation cooldown 선점 호출
+     * @return 선점 성공 횟수
+     * @throws Exception 동시 작업 실패 시 전달되는 예외
+     */
+    private long concurrentWinners(java.util.concurrent.Callable<Boolean> operation) throws Exception {
+        try (var executor = Executors.newFixedThreadPool(12)) {
+            var tasks = IntStream.range(0, 50)
+                    .mapToObj(index -> operation)
+                    .toList();
+            long winners = 0;
+            for (Future<Boolean> future : executor.invokeAll(tasks)) {
+                if (future.get()) {
+                    winners++;
+                }
+            }
+            return winners;
+        }
+    }
+
+    /**
+     * 지정한 source와 runId로 합성 에러를 반복 전송합니다.
+     *
+     * @param source 에러 발생원
+     * @param runId 실행 식별자
+     * @param count 전송 건수
+     */
+    private void postErrors(String source, String runId, int count) {
+        for (int index = 0; index < count; index++) {
+            var response = restTemplate.postForEntity("/errors", request(source, runId, index), Map.class);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        }
+    }
+
+    /**
+     * logical alert가 기대 상태와 시도 횟수에 도달할 때까지 기다립니다.
+     *
+     * @param runId 실행 식별자
+     * @param status 기대 상태
+     * @param attempts 기대 시도 횟수
+     */
+    private void awaitStatus(String runId, AlertStatus status, int attempts) {
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+            var deliveries = alertDeliveryRepository.findAll().stream()
+                    .filter(delivery -> runId.equals(delivery.getRunId()))
+                    .toList();
+            assertThat(deliveries).singleElement()
+                    .satisfies(delivery -> {
+                        assertThat(delivery.getStatus()).isEqualTo(status);
+                        assertThat(delivery.getAttemptCount()).isEqualTo(attempts);
+                    });
+        });
+    }
+
+    /**
+     * source가 일치하는 알림 POST 요청 패턴을 만듭니다.
+     *
+     * @param source 에러 발생원
+     * @return WireMock 요청 패턴
+     */
+    private com.github.tomakehurst.wiremock.client.MappingBuilder stubForSource(String source) {
+        return post(urlPathEqualTo("/mock/alerts"))
+                .withRequestBody(matchingJsonPath("$.source", equalTo(source)));
+    }
+
+    /**
+     * source가 일치하는 알림 POST 검증 패턴을 만듭니다.
+     *
+     * @param source 에러 발생원
+     * @return WireMock 요청 검증 패턴
+     */
+    private com.github.tomakehurst.wiremock.matching.RequestPatternBuilder requestPatternForSource(String source) {
+        return postRequestedFor(urlPathEqualTo("/mock/alerts"))
+                .withRequestBody(matchingJsonPath("$.source", equalTo(source)));
+    }
+
+    /**
+     * 통합 테스트용 합성 에러 요청을 만듭니다.
+     *
+     * @param source 에러 발생원
+     * @param runId 실행 식별자
+     * @param index 요청 순번
+     * @return 합성 에러 요청
+     */
+    private Map<String, Object> request(String source, String runId, int index) {
+        return Map.of(
+                "source", source,
+                "errorCode", "SYNTHETIC_FAILURE",
+                "severity", "ERROR",
+                "message", "synthetic alert event",
+                "occurredAt", Instant.now().minusSeconds(1).toString(),
+                "traceId", runId + "-" + index,
+                "runId", runId
+        );
     }
 
     /**

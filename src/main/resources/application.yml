@@ -29,8 +29,21 @@ app:
   counter:
     window-seconds: 60
     bucket-ttl-seconds: 120
+  alert:
+    threshold: 100
+    cooldown-seconds: 60
+    cooldown-enabled: true
+    retry:
+      max-attempts: 3
+      initial-delay-ms: 100
+      multiplier: 2.0
+    executor:
+      core-size: 2
+      max-size: 4
+      queue-capacity: 200
   notification:
     base-url: ${NOTIFICATION_BASE_URL:http://localhost:8089}
     health-path: /mock/health
+    alert-path: /mock/alerts
     connect-timeout: 2s
     read-timeout: 3s

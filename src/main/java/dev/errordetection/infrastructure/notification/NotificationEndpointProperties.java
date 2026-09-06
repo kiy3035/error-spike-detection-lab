@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record NotificationEndpointProperties(
         URI baseUrl,
         String healthPath,
+        String alertPath,
         Duration connectTimeout,
         Duration readTimeout
 ) {

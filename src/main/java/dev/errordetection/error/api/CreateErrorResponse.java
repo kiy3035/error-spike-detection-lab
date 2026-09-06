@@ -7,6 +7,9 @@ public record CreateErrorResponse(
         long errorId,
         Instant receivedAt,
         CounterPath countPath,
-        long rollingCount
+        long rollingCount,
+        boolean thresholdExceeded,
+        boolean cooldownAcquired,
+        boolean alertQueued
 ) {
 }

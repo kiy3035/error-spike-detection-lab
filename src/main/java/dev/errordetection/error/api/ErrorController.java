@@ -47,11 +47,15 @@ public class ErrorController {
         var result = ingestionFacade.ingest(request);
         var saved = result.event();
         var counter = result.counter();
+        var alert = result.alert();
         var response = new CreateErrorResponse(
                 saved.getId(),
                 saved.getReceivedAt(),
                 counter.path(),
-                counter.count()
+                counter.count(),
+                alert.thresholdExceeded(),
+                alert.cooldownAcquired(),
+                alert.alertQueued()
         );
         return ResponseEntity.created(URI.create("/errors/" + saved.getId())).body(response);
     }
