@@ -11,6 +11,9 @@ spring:
           time_zone: UTC
   flyway:
     enabled: true
+  data:
+    redis:
+      timeout: ${REDIS_COMMAND_TIMEOUT:100ms}
 
 management:
   endpoints:
@@ -23,6 +26,9 @@ management:
         enabled: true
 
 app:
+  counter:
+    window-seconds: 60
+    bucket-ttl-seconds: 120
   notification:
     base-url: ${NOTIFICATION_BASE_URL:http://localhost:8089}
     health-path: /mock/health

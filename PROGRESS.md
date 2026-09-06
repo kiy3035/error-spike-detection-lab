@@ -4,6 +4,8 @@
 
 ## 2단계 상태: 완료
 
+## 3단계 상태: 완료
+
 ## 완료한 작업
 
 - [x] Java 21 / Spring Boot 3.5.16 / Gradle Wrapper 8.12.1 프로젝트 생성
@@ -18,6 +20,10 @@
 - [x] `GET /errors` 이력 페이지와 `GET /errors/trend` 추이 API
 - [x] `(source, received_at DESC)` 보조 인덱스
 - [x] 입력 검증, 최대 7일·100건·1000 bucket 제한, 정제된 오류 응답
+- [x] Lua `INCR + EXPIRE` 기반 source별 1초 Redis bucket
+- [x] 현재 초 포함 60개 bucket 합산과 TTL 120초
+- [x] Redis 100ms timeout·연결 실패의 DB fallback
+- [x] Redis/DB 경로·처리시간·fallback 사유 metric
 
 ## 실제 실행한 테스트와 결과
 
@@ -30,6 +36,8 @@
 | local `bootRun` + `scripts/verify-stage1.ps1` | 통과, Actuator `UP`, WireMock health 200, alert stub 202 |
 | 2단계 `gradlew.bat --no-daemon test` | 통과, 단위 테스트 5개 |
 | 2단계 `gradlew.bat --no-daemon integrationTest` | 통과, 통합 테스트 3개 |
+| 3단계 `gradlew.bat --no-daemon test` | 통과, 단위 테스트 10개 |
+| 3단계 `gradlew.bat --no-daemon integrationTest` | 통과, 통합 테스트 7개 |
 
 통합 테스트에서 Flyway seed 1건, PostgreSQL 조회, Redis SET/GET, WireMock health, Actuator `UP`을 확인했다. 최초 실제 Compose 확인에서는 WireMock 최초 응답이 1초를 넘어 `notificationEndpoint`가 DOWN이 되었고, connect 2초/read 3초로 조정했다. 조정 후 실제 애플리케이션을 재기동해 스크립트로 Actuator `UP`을 확인했다.
 
@@ -43,10 +51,10 @@
 - 검증 종료 후 애플리케이션 `bootRun` 프로세스는 종료했으며, Compose 인프라는 재현 확인을 위해 현재 실행 중이다. 필요하면 `docker compose down`으로 종료한다.
 - 합성 에러가 PostgreSQL에 저장되고 서버 수신 시각 기준으로 페이지·추이 조회된다.
 - 조회 범위·페이지·bucket 상한과 입력 문자 제한이 적용된다.
+- Redis 정상 시 1초 bucket rolling count를 반환하고, 연결 실패·100ms timeout 시 동일 `receivedAt` 기준 DB count로 전환한다.
 
 ## 미완료 작업과 측정 대기 항목
 
-- 3단계 Redis rolling window와 DB fallback
 - 4단계 cooldown과 비동기 retry 알림
 - 5단계 k6·인덱스·cooldown 성능 실험 및 결과 파일
 - 6단계 문서 확장과 블로그 초안
@@ -56,10 +64,11 @@
 - 시스템 Gradle 명령이 없어 기존 사용자 Gradle 캐시의 Gradle 8.12.1로 Wrapper를 생성했다.
 - 샌드박스에서 사용자 Docker 설정 파일과 WMI 조회가 권한 제한으로 차단됐다. 실제 Docker 검증은 승인된 로컬 Docker 명령으로 수행했다.
 - WireMock 최초 health 호출이 1초 timeout을 초과해 전체 Actuator 상태가 일시적으로 DOWN이 되었다. local health timeout을 2초/3초로 늘렸다.
+- Toxiproxy에 300ms downstream 지연을 주입해 100ms Redis timeout fallback을 재현했고, 별도 테스트에서 Redis 컨테이너 중단 연결 실패도 재현했다.
 
 ## 다음 작업에서 바로 시작할 내용
 
-2단계 저장·조회·집계 검증이 완료되었다. 다음은 3단계 Redis rolling window와 명시적 가용성 예외 대상 DB fallback이다.
+3단계 rolling window와 장애 fallback 검증이 완료되었다. 다음은 4단계 threshold, Redis/DB cooldown, 비동기 retry 알림이다.
 
 ## 실행 및 재현 명령어
 
@@ -81,6 +90,7 @@ docker compose down
 - `compose.yaml`, `.env.example`, `.gitignore`, `.gitattributes`
 - `src/main/java/dev/errordetection/*`
 - `src/main/java/dev/errordetection/error/*`, `src/main/java/dev/errordetection/config/TimeConfiguration.java`
+- `src/main/java/dev/errordetection/counter/*`, `src/integrationTest/java/dev/errordetection/RedisFallbackIntegrationTest.java`
 - `src/main/resources/application*.yml`, `src/main/resources/db/*`
 - `src/test/java/*`, `src/integrationTest/java/*`
 - `wiremock/mappings/*`, `scripts/verify-stage1.ps1`

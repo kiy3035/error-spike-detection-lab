@@ -4,7 +4,7 @@ DB 에러 이력과 Redis 기반 급증 감지를 로컬에서 재현하기 위�
 
 ## 현재 구현 범위
 
-현재 1단계 인프라 기반과 2단계 에러 저장·조회 기능을 제공합니다.
+현재 1단계 인프라 기반, 2단계 에러 저장·조회, 3단계 rolling count와 DB fallback을 제공합니다.
 
 - Java 21, Spring Boot 3.5.16, Gradle Wrapper 8.12.1
 - PostgreSQL 16.8, Redis 7.4.2, WireMock 3.13.1 Docker Compose
@@ -14,8 +14,9 @@ DB 에러 이력과 Redis 기반 급증 감지를 로컬에서 재현하기 위�
 - `POST /errors` 합성 에러 저장
 - `GET /errors` 서버 수신 시각 기준 페이지 조회
 - `GET /errors/trend` 분/시간 단위 추이 조회
+- Redis rolling window와 DB fallback
 
-rolling window, DB fallback, cooldown, 비동기 retry, k6 부하 측정은 다음 단계에서 구현합니다.
+cooldown, 비동기 retry, k6 부하 측정은 다음 단계에서 구현합니다.
 
 ## 에러 API
 
@@ -42,6 +43,8 @@ Invoke-RestMethod "http://localhost:8080/errors/trend?source=order-api&from=2026
 ```
 
 시간 범위는 `[from, to)`이고 최대 7일, 페이지 크기는 최대 100, 추이 결과는 최대 1000 bucket입니다. 추이의 빈 구간은 0으로 반환합니다.
+
+저장 응답에는 `countPath`가 `REDIS` 또는 `DB_FALLBACK`으로, `rollingCount`가 최근 60초 건수로 포함됩니다. 정상 경로는 source SHA-256 scope의 1초 bucket 60개를 합산하며 bucket TTL은 120초입니다. Redis 연결 실패 또는 기본 100ms 명령 timeout에서만 DB `(windowStart, windowEnd]` count로 전환합니다.
 
 ## 실행 환경
 

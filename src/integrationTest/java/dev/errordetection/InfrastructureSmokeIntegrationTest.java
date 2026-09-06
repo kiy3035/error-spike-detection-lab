@@ -7,10 +7,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import dev.errordetection.infrastructure.notification.NotificationEndpointClient;
+import dev.errordetection.counter.RedisBucketCounter;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +66,9 @@ class InfrastructureSmokeIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private RedisBucketCounter redisBucketCounter;
 
     /**
      * Testcontainers와 WireMock의 동적 연결 정보를 Spring 설정에 주입합니다.
@@ -175,6 +182,42 @@ class InfrastructureSmokeIntegrationTest {
                 .toUri();
         var historyResponse = restTemplate.exchange(RequestEntity.get(historyUri).build(), Map.class);
         assertThat(historyResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * 최근 60개 1초 bucket 경계와 source 격리가 실제 Redis에서 유지되는지 확인합니다.
+     */
+    @Test
+    void countsSixtyBucketsAndSeparatesSources() {
+        Instant now = Instant.parse("2026-09-06T01:00:00Z");
+        redisBucketCounter.incrementAndCount("boundary-api", now.minusSeconds(60));
+        long boundaryCount = redisBucketCounter.incrementAndCount("boundary-api", now);
+        long otherSourceCount = redisBucketCounter.incrementAndCount("other-api", now);
+
+        assertThat(boundaryCount).isEqualTo(1L);
+        assertThat(otherSourceCount).isEqualTo(1L);
+    }
+
+    /**
+     * 같은 1초 bucket의 동시 100건 증가가 유실되지 않는지 확인합니다.
+     *
+     * @throws Exception 비동기 작업 실패 시 전달되는 예외
+     */
+    @Test
+    void incrementsOneSecondBucketConcurrently() throws Exception {
+        Instant now = Instant.parse("2026-09-06T02:00:00Z");
+        try (var executor = Executors.newFixedThreadPool(12)) {
+            var tasks = IntStream.range(0, 100)
+                    .mapToObj(index -> (java.util.concurrent.Callable<Long>) () ->
+                            redisBucketCounter.incrementAndCount("concurrent-api", now))
+                    .toList();
+            for (Future<Long> future : executor.invokeAll(tasks)) {
+                future.get();
+            }
+        }
+
+        long finalCount = redisBucketCounter.incrementAndCount("concurrent-api", now);
+        assertThat(finalCount).isEqualTo(101L);
     }
 
     /**
