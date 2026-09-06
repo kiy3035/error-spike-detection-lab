@@ -29,3 +29,21 @@ PostgreSQL, Redis, WireMock을 하나의 `compose.yaml`에 둔다. 애플리케�
 ### health timeout
 
 WireMock 최초 응답의 로컬 기동 지연으로 1초 timeout이 실제 Compose health에서 간헐적으로 전체 상태를 `DOWN`으로 만들었다. stage 1 연결 확인의 안정성을 위해 WireMock health 호출 timeout은 connect 2초/read 3초로 두었다. Redis 100ms 명령 timeout은 rolling counter 단계의 별도 설정으로 남긴다.
+
+## 2026-09-06: 2단계 에러 저장과 조회
+
+### 시간과 조회 경계
+
+실시간 집계 기준은 요청의 `occurredAt`이 아니라 주입된 UTC `Clock`으로 생성한 `receivedAt`이다. 이력·추이 API 범위는 `[from, to)`로 고정하고 최대 7일로 제한했다. 다음 단계의 DB fallback은 명세대로 `(windowStart, windowEnd]`를 별도 count 메서드로 사용한다.
+
+### 추이 집계와 빈 구간
+
+외부 입력을 SQL 문자열에 직접 넣지 않기 위해 bucket은 `MINUTE`, `HOUR` enum만 허용한다. PostgreSQL `date_trunc` 결과를 받은 뒤 애플리케이션에서 빈 구간을 0으로 채운다. 응답 폭증을 막기 위해 결과 bucket을 최대 1000개로 제한한다.
+
+### 페이지와 식별자 제한
+
+이력 페이지 크기는 최대 100건이다. source, errorCode, traceId, runId는 길이와 허용 문자를 검증하며, 요청 본문 값과 내부 예외는 로그나 오류 응답에 그대로 노출하지 않는다. runId가 없으면 로컬 수동 요청을 뜻하는 `manual`을 저장한다.
+
+### 인덱스
+
+실제 이력 조회와 이후 fallback 조건이 사용하는 `(source, received_at DESC)` 보조 인덱스를 V3 migration으로 추가했다. 5단계 Index OFF/ON 실험에서는 이 인덱스만 대상으로 하고 PK 인덱스는 변경하지 않는다.

@@ -2,17 +2,46 @@
 
 DB 에러 이력과 Redis 기반 급증 감지를 로컬에서 재현하기 위한 개인 기술 블로그 실험 저장소입니다. 모든 데이터와 알림은 합성 데이터이며, 외부 유료 서비스나 실제 Slack·SMS·이메일을 사용하지 않습니다.
 
-## 1단계 현재 범위
+## 현재 구현 범위
 
-이번 단계는 프로젝트와 로컬 인프라 기반만 제공합니다.
+현재 1단계 인프라 기반과 2단계 에러 저장·조회 기능을 제공합니다.
 
 - Java 21, Spring Boot 3.5.16, Gradle Wrapper 8.12.1
 - PostgreSQL 16.8, Redis 7.4.2, WireMock 3.13.1 Docker Compose
 - Flyway 공통 스키마와 `local` profile 전용 smoke seed
 - PostgreSQL·Redis·WireMock 연결과 Actuator health 확인
 - Docker 없는 단위 테스트와 Testcontainers 통합 smoke 테스트
+- `POST /errors` 합성 에러 저장
+- `GET /errors` 서버 수신 시각 기준 페이지 조회
+- `GET /errors/trend` 분/시간 단위 추이 조회
 
-에러 저장 API, 추이 조회, rolling window, DB fallback, cooldown, 비동기 retry, k6 부하 측정은 다음 단계에서 구현합니다.
+rolling window, DB fallback, cooldown, 비동기 retry, k6 부하 측정은 다음 단계에서 구현합니다.
+
+## 에러 API
+
+합성 에러 저장:
+
+```powershell
+$body = @{
+  source = "order-api"
+  errorCode = "SYNTHETIC_TIMEOUT"
+  severity = "ERROR"
+  message = "synthetic timeout"
+  occurredAt = "2026-09-06T00:00:00Z"
+  traceId = "manual-0001"
+  runId = "manual-run"
+} | ConvertTo-Json
+Invoke-RestMethod http://localhost:8080/errors -Method Post -ContentType "application/json" -Body $body
+```
+
+서버 `received_at` 기준 이력과 추이 조회:
+
+```powershell
+Invoke-RestMethod "http://localhost:8080/errors?source=order-api&from=2026-09-05T00:00:00Z&to=2026-09-07T00:00:00Z&page=0&size=20"
+Invoke-RestMethod "http://localhost:8080/errors/trend?source=order-api&from=2026-09-05T00:00:00Z&to=2026-09-05T12:00:00Z&bucket=HOUR"
+```
+
+시간 범위는 `[from, to)`이고 최대 7일, 페이지 크기는 최대 100, 추이 결과는 최대 1000 bucket입니다. 추이의 빈 구간은 0으로 반환합니다.
 
 ## 실행 환경
 
