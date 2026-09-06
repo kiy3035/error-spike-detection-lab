@@ -1,5 +1,6 @@
 package dev.errordetection.error.application;
 
+import dev.errordetection.alert.AlertDispatchCoordinator;
 import dev.errordetection.counter.CounterResult;
 import dev.errordetection.counter.RollingErrorCounter;
 import dev.errordetection.error.api.CreateErrorRequest;
@@ -12,6 +13,7 @@ public class ErrorIngestionFacade {
 
     private final ErrorPersistenceService persistenceService;
     private final RollingErrorCounter rollingErrorCounter;
+    private final AlertDispatchCoordinator alertDispatchCoordinator;
     private final MeterRegistry meterRegistry;
 
     /**
@@ -19,15 +21,18 @@ public class ErrorIngestionFacade {
      *
      * @param persistenceService 트랜잭션 저장 서비스
      * @param rollingErrorCounter rolling count 서비스
+     * @param alertDispatchCoordinator 임계값과 알림 등록 조정자
      * @param meterRegistry 수신 건수 metric 레지스트리
      */
     public ErrorIngestionFacade(
             ErrorPersistenceService persistenceService,
             RollingErrorCounter rollingErrorCounter,
+            AlertDispatchCoordinator alertDispatchCoordinator,
             MeterRegistry meterRegistry
     ) {
         this.persistenceService = persistenceService;
         this.rollingErrorCounter = rollingErrorCounter;
+        this.alertDispatchCoordinator = alertDispatchCoordinator;
         this.meterRegistry = meterRegistry;
     }
 
@@ -41,9 +46,14 @@ public class ErrorIngestionFacade {
         ErrorEvent saved = persistenceService.save(request);
         meterRegistry.counter("error.events.received").increment();
         CounterResult counter = rollingErrorCounter.incrementAndCount(saved.getSource(), saved.getReceivedAt());
-        return new IngestionResult(saved, counter);
+        var alert = alertDispatchCoordinator.dispatchIfNeeded(saved, counter);
+        return new IngestionResult(saved, counter, alert);
     }
 
-    public record IngestionResult(ErrorEvent event, CounterResult counter) {
+    public record IngestionResult(
+            ErrorEvent event,
+            CounterResult counter,
+            AlertDispatchCoordinator.AlertDecision alert
+    ) {
     }
 }

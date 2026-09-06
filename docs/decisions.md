@@ -65,3 +65,25 @@ DB fallback은 저장에 사용한 같은 `receivedAt`을 종료점으로 `(rece
 ### 측정 지표
 
 `error.events.received`, `error.counter.requests{path}`, `error.counter.duration{path}`, `error.counter.fallbacks{reason}`을 기록한다. source, traceId, message 같은 고카디널리티 값은 tag에 넣지 않는다. 처리시간은 `System.nanoTime()` 기반으로 측정한다.
+
+## 2026-09-06: 4단계 cooldown과 비동기 재시도 알림
+
+### threshold와 cooldown 경로
+
+기본 판정은 최근 60초 count가 100 이상일 때다. Redis count 경로는 source SHA-256 scope의 키에 `SET NX EX 60`을 실행하고, DB fallback count 경로는 `alert_cooldown`의 unique `scope_key`에 조건부 `INSERT ... ON CONFLICT DO UPDATE ... WHERE ... RETURNING` 한 문장만 사용한다. Redis cooldown 자체가 연결 실패 또는 명령 timeout이면 같은 요청에서 DB gate로 전환한다. Redis와 DB 사이에는 분산 트랜잭션이 없으므로 장애 전환 경계에서 두 저장소의 기존 선점 상태가 완전히 동기화된다고 주장하지 않는다.
+
+cooldown OFF는 공통 기본값이 아니라 `local,benchmark` profile 조합에서만 활성화된다. 5단계 측정에서 각 run 전에 Redis key와 DB cooldown을 초기화해 profile 차이 이외의 상태를 격리한다.
+
+### 트랜잭션과 비동기 경계
+
+에러 저장 commit, rolling count, threshold 판정 순서를 유지한다. cooldown winner만 `AlertDeliveryService`의 짧은 `REQUIRES_NEW` 트랜잭션으로 `PENDING`을 저장한 뒤 별도 `AsyncAlertSender` Bean을 호출한다. executor는 core 2, max 4, queue 200으로 제한하고 포화 시 `CallerRunsPolicy`를 사용한다. 이 정책은 작업 유실 대신 호출자 지연을 허용하는 선택이며 5단계 결과 해석 시 queue 포화 여부를 확인한다.
+
+### 재시도와 idempotency
+
+연결 오류, read timeout, HTTP 429와 5xx만 최대 3회 재시도한다. backoff는 100ms에서 시작해 2배로 증가한다. 일반 4xx와 그 밖의 HTTP 클라이언트 오류는 첫 시도에서 `FAILED`로 기록한다. 일시적 오류가 소진되면 `@Recover`가 `FAILED`를 기록한다. 모든 HTTP 시도 전에 attempt를 별도 commit하고 성공 응답 뒤 `SENT`와 `sent_at`을 기록한다.
+
+logical alert UUID를 payload와 `Idempotency-Key` 헤더에 함께 넣는다. 다만 WireMock은 실제 멱등 저장소가 아니며, 네트워크 timeout 전에 상대가 요청을 처리했을 가능성까지 로컬 발신자만으로 제거할 수 없다는 한계가 있다.
+
+### 조회와 metric
+
+`GET /alerts`는 runId, source, status, queuedAt 범위와 최대 100건 페이지를 제공한다. 선택 조건만 동적 predicate에 포함해 PostgreSQL에서 null parameter 타입 추론 문제가 생기지 않게 했다. `(run_id, queued_at DESC)` 조회 인덱스를 V4 migration으로 추가했다. `error.alerts{result=queued|suppressed|sent|failed}`와 monotonic timer 기반 `error.alert.delivery.duration`을 기록하며 고카디널리티 식별자는 tag로 사용하지 않는다.
