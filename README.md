@@ -98,6 +98,8 @@ seed와 Flyway 이력을 포함한 로컬 DB 볼륨까지 새로 시작할 때�
 docker compose down -v
 ```
 
+`-v`는 로컬 PostgreSQL·Redis 볼륨과 Flyway 이력을 삭제하므로 seed를 완전히 다시 만들 때만 사용합니다.
+
 ## 주요 파일
 
 - `compose.yaml`: PostgreSQL, Redis, WireMock 서비스
