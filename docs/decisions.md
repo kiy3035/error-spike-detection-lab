@@ -47,3 +47,21 @@ WireMock 최초 응답의 로컬 기동 지연으로 1초 timeout이 실제 Comp
 ### 인덱스
 
 실제 이력 조회와 이후 fallback 조건이 사용하는 `(source, received_at DESC)` 보조 인덱스를 V3 migration으로 추가했다. 5단계 Index OFF/ON 실험에서는 이 인덱스만 대상으로 하고 PK 인덱스는 변경하지 않는다.
+
+## 2026-09-06: 3단계 rolling window와 DB fallback
+
+### 1초 bucket과 TTL
+
+Redis 정상 경로는 현재 초와 직전 59초의 source별 bucket을 합산한다. 현재 bucket의 `INCR`와 최초 생성 시 `EXPIRE`는 Lua 한 번으로 원자 처리한다. TTL은 window 60초보다 여유 있는 120초로 고정해 경계 bucket을 안전하게 읽는다. 이는 1초 해상도의 rolling window이며 이벤트별 정확한 sliding log로 표현하지 않는다.
+
+### Redis key scope
+
+검증된 source도 Redis 키에 평문으로 직접 넣지 않고 SHA-256 전체 64자리로 변환한다. `error:count:{hash}:epochSecond` 형식으로 source를 격리하고 같은 source bucket이 Redis Cluster hash tag를 공유할 수 있게 했다.
+
+### fallback 경계와 예외 분류
+
+DB fallback은 저장에 사용한 같은 `receivedAt`을 종료점으로 `(receivedAt - 60초, receivedAt]`를 count한다. `RedisConnectionFailureException`, `QueryTimeoutException`, 원인 체인에 Lettuce 명령 timeout이 있는 `RedisSystemException`만 fallback한다. 그 밖의 변환·overflow·프로그래밍 오류는 그대로 전파한다.
+
+### 측정 지표
+
+`error.events.received`, `error.counter.requests{path}`, `error.counter.duration{path}`, `error.counter.fallbacks{reason}`을 기록한다. source, traceId, message 같은 고카디널리티 값은 tag에 넣지 않는다. 처리시간은 `System.nanoTime()` 기반으로 측정한다.

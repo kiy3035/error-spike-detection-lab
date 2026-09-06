@@ -1,6 +1,6 @@
 package dev.errordetection.error.api;
 
-import dev.errordetection.error.application.ErrorPersistenceService;
+import dev.errordetection.error.application.ErrorIngestionFacade;
 import dev.errordetection.error.application.ErrorQueryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -22,17 +22,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/errors")
 public class ErrorController {
 
-    private final ErrorPersistenceService persistenceService;
+    private final ErrorIngestionFacade ingestionFacade;
     private final ErrorQueryService queryService;
 
     /**
      * 에러 저장과 조회 서비스를 주입합니다.
      *
-     * @param persistenceService 에러 저장 서비스
+     * @param ingestionFacade 저장 후 감지 facade
      * @param queryService 에러 조회 서비스
      */
-    public ErrorController(ErrorPersistenceService persistenceService, ErrorQueryService queryService) {
-        this.persistenceService = persistenceService;
+    public ErrorController(ErrorIngestionFacade ingestionFacade, ErrorQueryService queryService) {
+        this.ingestionFacade = ingestionFacade;
         this.queryService = queryService;
     }
 
@@ -44,8 +44,15 @@ public class ErrorController {
      */
     @PostMapping
     public ResponseEntity<CreateErrorResponse> create(@Valid @RequestBody CreateErrorRequest request) {
-        var saved = persistenceService.save(request);
-        var response = new CreateErrorResponse(saved.getId(), saved.getReceivedAt());
+        var result = ingestionFacade.ingest(request);
+        var saved = result.event();
+        var counter = result.counter();
+        var response = new CreateErrorResponse(
+                saved.getId(),
+                saved.getReceivedAt(),
+                counter.path(),
+                counter.count()
+        );
         return ResponseEntity.created(URI.create("/errors/" + saved.getId())).body(response);
     }
 
