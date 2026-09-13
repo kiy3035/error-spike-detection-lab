@@ -1,0 +1,7 @@
+"scenario","runs","apiP95MsAverage","apiP95MsMin","apiP95MsMax","counterP95MsAverage","thresholdToAlertMsAverage","thresholdToAlertMsMin","thresholdToAlertMsMax","sentEventsAverage","failedEventsTotal","droppedIterationsTotal","alertQueuedAverage","alertAttemptsAverage","alertSentAverage","alertFailedTotal","alertSuppressedAverage"
+"db-fallback-index-off","3","3569.197","3534.368","3633.166","3485.103","55.135","17.185","84.617","2851.333","0","449","1","1","1","0","2751.333"
+"db-fallback-index-on","3","3540.477","3508.727","3562.444","3473.612","44.836","17.013","99.571","2851.667","0","446","1","1","1","0","2751.667"
+"nth-alert-db-fallback","3","56.892","52.697","60.39","30.278","19.745","17.753","23.406","100","0","0","1","1","1","0","0"
+"nth-alert-redis","3","63.151","61.065","64.917","2.267","50.31","17.618","71.635","100","0","0","1","1","1","0","0"
+"redis-cooldown-off","3","42.215","31.665","49.449","1.046","13.346","11.344","16.459","3001","0","0","2902","2902","2902","0","0"
+"redis-cooldown-on","3","6.602","5.99","7.005","0.952","42.957","15.108","96.772","3000.667","0","0","1","1","1","0","2901"

@@ -1,0 +1,22 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/error-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 5m30s max duration (incl. graceful stop):
+              * nth_alert_db_fallback_run_3: 100 iterations shared among 1 VUs (maxDuration: 5m0s, gracefulStop: 30s)
+
+
+running (0m01.0s), 1/1 VUs, 88 complete and 0 interrupted iterations
+nth_alert_db_fallback_run_3   [  88% ] 1 VUs  0m01.0s/5m0s  088/100 shared iters
+nth_alert_db_fallback_run_3 summary saved.
+
+running (0m01.2s), 0/1 VUs, 100 complete and 0 interrupted iterations
+nth_alert_db_fallback_run_3 ✓ [ 100% ] 1 VUs  0m01.2s/5m0s  100/100 shared iters

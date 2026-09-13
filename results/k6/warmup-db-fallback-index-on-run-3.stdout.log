@@ -1,0 +1,46 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/error-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 15s max duration (incl. graceful stop):
+              * warmup_db_fallback_index_on_run_3: 100.00 iterations/s for 5s (maxVUs: 200-1000, gracefulStop: 10s)
+
+
+running (00.9s), 0093/0200 VUs, 0 complete and 0 interrupted iterations
+warmup_db_fallback_index_on...   [  18% ] 0093/0200 VUs  0.9s/5s  100.00 iters/s
+
+running (01.9s), 0192/0200 VUs, 0 complete and 0 interrupted iterations
+warmup_db_fallback_index_on...   [  38% ] 0192/0200 VUs  1.9s/5s  100.00 iters/s
+
+running (02.9s), 0246/0246 VUs, 0 complete and 0 interrupted iterations
+warmup_db_fallback_index_on...   [  58% ] 0246/0246 VUs  2.9s/5s  100.00 iters/s
+
+running (03.9s), 0296/0296 VUs, 0 complete and 0 interrupted iterations
+warmup_db_fallback_index_on...   [  78% ] 0296/0296 VUs  3.9s/5s  100.00 iters/s
+
+running (04.9s), 0346/0346 VUs, 0 complete and 0 interrupted iterations
+warmup_db_fallback_index_on...   [  98% ] 0346/0346 VUs  4.9s/5s  100.00 iters/s
+
+running (05.9s), 0350/0350 VUs, 0 complete and 0 interrupted iterations
+warmup_db_fallback_index_on... ↓ [ 100% ] 0350/0350 VUs  5s  100.00 iters/s
+
+running (06.9s), 0350/0350 VUs, 0 complete and 0 interrupted iterations
+warmup_db_fallback_index_on... ↓ [ 100% ] 0350/0350 VUs  5s  100.00 iters/s
+
+running (07.9s), 0325/0350 VUs, 25 complete and 0 interrupted iterations
+warmup_db_fallback_index_on... ↓ [ 100% ] 0350/0350 VUs  5s  100.00 iters/s
+
+running (08.9s), 0152/0350 VUs, 198 complete and 0 interrupted iterations
+warmup_db_fallback_index_on... ↓ [ 100% ] 0350/0350 VUs  5s  100.00 iters/s
+warmup_db_fallback_index_on_run_3 summary saved.
+
+running (09.7s), 0000/0350 VUs, 350 complete and 0 interrupted iterations
+warmup_db_fallback_index_on... ✓ [ 100% ] 0000/0350 VUs  5s  100.00 iters/s

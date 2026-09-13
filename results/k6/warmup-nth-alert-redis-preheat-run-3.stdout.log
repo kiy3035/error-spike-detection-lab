@@ -1,0 +1,34 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/error-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 15s max duration (incl. graceful stop):
+              * warmup_nth_alert_redis_preheat_run_3: 100.00 iterations/s for 5s (maxVUs: 200-1000, gracefulStop: 10s)
+
+
+running (01.0s), 0096/0200 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_redis_preh...   [  19% ] 0096/0200 VUs  1.0s/5s  100.00 iters/s
+
+running (02.0s), 0196/0200 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_redis_preh...   [  39% ] 0196/0200 VUs  2.0s/5s  100.00 iters/s
+
+running (03.0s), 0248/0248 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_redis_preh...   [  59% ] 0248/0248 VUs  3.0s/5s  100.00 iters/s
+
+running (04.0s), 0157/0264 VUs, 175 complete and 0 interrupted iterations
+warmup_nth_alert_redis_preh...   [  79% ] 0157/0264 VUs  4.0s/5s  100.00 iters/s
+
+running (05.0s), 0103/0264 VUs, 329 complete and 0 interrupted iterations
+warmup_nth_alert_redis_preh...   [  99% ] 0103/0264 VUs  5.0s/5s  100.00 iters/s
+warmup_nth_alert_redis_preheat_run_3 summary saved.
+
+running (05.3s), 0000/0264 VUs, 436 complete and 0 interrupted iterations
+warmup_nth_alert_redis_preh... ✓ [ 100% ] 0000/0264 VUs  5s  100.00 iters/s

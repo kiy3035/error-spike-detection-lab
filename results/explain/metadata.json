@@ -1,0 +1,28 @@
+[
+  {
+    "runId": "stage5-explain-db-fallback-index-on-20260913-153211",
+    "scenario": "explain-db-fallback-index-on",
+    "source": "s5-explain-dbon-20260913-153211",
+    "indexMode": "ON",
+    "startedAt": "2026-09-13T15:33:00.0631561+09:00",
+    "endedAt": "2026-09-13T15:33:32.2063555+09:00",
+    "durationSeconds": 30,
+    "targetRate": 100,
+    "completedRequests": 2852,
+    "droppedIterations": 149,
+    "explainPath": "results/explain/fallback-index-on.json"
+  },
+  {
+    "runId": "stage5-explain-db-fallback-index-off-20260913-153211",
+    "scenario": "explain-db-fallback-index-off",
+    "source": "s5-explain-dboff-20260913-153211",
+    "indexMode": "OFF",
+    "startedAt": "2026-09-13T15:33:55.2356913+09:00",
+    "endedAt": "2026-09-13T15:34:27.4457148+09:00",
+    "durationSeconds": 30,
+    "targetRate": 100,
+    "completedRequests": 2852,
+    "droppedIterations": 148,
+    "explainPath": "results/explain/fallback-index-off.json"
+  }
+]

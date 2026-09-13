@@ -7,6 +7,7 @@ public record CreateErrorResponse(
         long errorId,
         Instant receivedAt,
         CounterPath countPath,
+        long counterDurationNanos,
         long rollingCount,
         boolean thresholdExceeded,
         boolean cooldownAcquired,

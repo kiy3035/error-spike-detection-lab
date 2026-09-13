@@ -167,6 +167,7 @@ class InfrastructureSmokeIntegrationTest {
 
         var createResponse = restTemplate.postForEntity("/errors", request, Map.class);
         assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(((Number) createResponse.getBody().get("counterDurationNanos")).longValue()).isPositive();
         Instant receivedAt = Instant.parse(createResponse.getBody().get("receivedAt").toString());
 
         Instant from = receivedAt.minusSeconds(60);
