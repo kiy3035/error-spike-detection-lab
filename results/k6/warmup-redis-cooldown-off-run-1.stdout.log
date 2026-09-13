@@ -1,0 +1,37 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/error-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 15s max duration (incl. graceful stop):
+              * warmup_redis_cooldown_off_run_1: 100.00 iterations/s for 5s (maxVUs: 200-1000, gracefulStop: 10s)
+
+
+running (00.9s), 0093/0200 VUs, 0 complete and 0 interrupted iterations
+warmup_redis_cooldown_off_r...   [  19% ] 0093/0200 VUs  0.9s/5s  100.00 iters/s
+
+running (01.9s), 0193/0200 VUs, 0 complete and 0 interrupted iterations
+warmup_redis_cooldown_off_r...   [  39% ] 0193/0200 VUs  1.9s/5s  100.00 iters/s
+
+running (02.9s), 0228/0241 VUs, 24 complete and 0 interrupted iterations
+warmup_redis_cooldown_off_r...   [  59% ] 0228/0241 VUs  2.9s/5s  100.00 iters/s
+
+running (03.9s), 0227/0242 VUs, 124 complete and 0 interrupted iterations
+warmup_redis_cooldown_off_r...   [  79% ] 0227/0242 VUs  3.9s/5s  100.00 iters/s
+
+running (04.9s), 0161/0242 VUs, 290 complete and 0 interrupted iterations
+warmup_redis_cooldown_off_r...   [  99% ] 0161/0242 VUs  4.9s/5s  100.00 iters/s
+
+running (05.9s), 0132/0242 VUs, 326 complete and 0 interrupted iterations
+warmup_redis_cooldown_off_r... ↓ [ 100% ] 0167/0242 VUs  5s  100.00 iters/s
+warmup_redis_cooldown_off_run_1 summary saved.
+
+running (06.8s), 0000/0242 VUs, 458 complete and 0 interrupted iterations
+warmup_redis_cooldown_off_r... ✓ [ 100% ] 0000/0242 VUs  5s  100.00 iters/s

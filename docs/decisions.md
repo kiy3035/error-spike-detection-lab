@@ -87,3 +87,25 @@ logical alert UUID를 payload와 `Idempotency-Key` 헤더에 함께 넣는다. �
 ### 조회와 metric
 
 `GET /alerts`는 runId, source, status, queuedAt 범위와 최대 100건 페이지를 제공한다. 선택 조건만 동적 predicate에 포함해 PostgreSQL에서 null parameter 타입 추론 문제가 생기지 않게 했다. `(run_id, queued_at DESC)` 조회 인덱스를 V4 migration으로 추가했다. `error.alerts{result=queued|suppressed|sent|failed}`와 monotonic timer 기반 `error.alert.delivery.duration`을 기록하며 고카디널리티 식별자는 tag로 사용하지 않는다.
+
+## 2026-09-13: 5단계 성능 측정
+
+### 측정 경계와 원본값
+
+API 전체 시간은 k6 `http_req_duration`, rolling count 구간은 응답의 `counterDurationNanos`로 분리했다. 후자는 이미 `System.nanoTime()`으로 측정하던 `CounterResult.durationNanos`를 응답에 노출한 값이며 wall clock 추정치가 아니다. N번째 감지부터 알림까지는 `alert_delivery.sent_at - threshold_event_received_at`으로 계산했다.
+
+### 100 RPS와 정확한 N번째 실험 분리
+
+100 RPS는 `constant-arrival-rate`로 30초 실행하고, 정확한 N번째 검증은 1 VU `shared-iterations` 100회로 분리했다. 동시 부하에서는 여러 요청이 같은 시점의 합계를 관찰해 cooldown 승자의 rolling count가 100보다 커질 수 있으므로 이를 정확한 100번째 이벤트라고 부르지 않는다. 순차 실험은 매회 alert row의 `rolling_count=100`을 자동 검증한다.
+
+### dropped iteration 해석
+
+Redis 중단 DB fallback은 100 RPS 목표 중 run당 148~151회를 k6가 시작하지 못했다. 전송된 HTTP 요청은 모두 성공했지만 목표 처리량을 달성한 것은 아니므로, 실행을 폐기하지 않고 완료 요청 수와 `droppedIterations`를 raw 결과에 함께 보존한다. Redis 연결 실패 감지 시간이 counter p95에 포함되므로 DB SQL 시간으로 오해하지 않는다.
+
+### 인덱스 실험
+
+OFF에서는 `idx_error_event_source_received_at`만 제거하고 `error_event_pkey` 존재를 매번 catalog에서 확인했다. 각 전환 뒤 `ANALYZE error_event`를 실행했다. 동일 30초 DB fallback 부하 뒤 ON은 `Index Only Scan`, OFF는 `Seq Scan`을 선택했다. 이 데이터 크기에서는 OFF plan의 실제 시간이 더 짧았으므로 인덱스 개선율을 계산하거나 효과를 일반화하지 않는다.
+
+### 상태 초기화와 실행 순서
+
+run마다 `alert_delivery`, `alert_cooldown`, `error_event`를 truncate하고, Redis 사용 조건은 `FLUSHDB`, WireMock은 request journal 삭제를 수행했다. 3회 주요 조건은 정순·역순·정순으로 교차했다. 고정된 Compose CPU/메모리 제한과 JVM 옵션을 사용했다. 컨테이너 CPU 사용률은 신뢰할 수 있는 동일 간격 표본을 확보하지 못해 수집하지 않았고, 호스트 CPU·RAM과 자원 제한만 환경 파일에 기록했다.

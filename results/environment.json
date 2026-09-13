@@ -1,16 +1,49 @@
 {
-  "capturedAt": "2026-09-05T22:45:40+09:00",
-  "os": "Windows (PowerShell; 상세 OS 조회는 샌드박스 권한으로 확인하지 못함)",
-  "cpu": "unavailable (권한 제한으로 측정하지 않음)",
-  "ramBytes": null,
-  "java": "openjdk version 21.0.8 2025-07-15 LTS",
+  "capturedAt": "2026-09-13T15:03:16.3575913+09:00",
+  "os": "Microsoft Windows 11 Home 10.0.26200",
+  "cpu": "AMD Ryzen 7 8700G w/ Radeon 780M Graphics",
+  "logicalProcessors": 16,
+  "ramBytes": 33412022272,
+  "java": "openjdk version \"21.0.12.1\" 2026-08-18 LTS OpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS) OpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)",
   "springBoot": "3.5.16",
-  "gradle": "8.12.1",
+  "gradle": "Gradle 8.12.1",
   "postgresqlImage": "postgres:16.8-alpine",
   "redisImage": "redis:7.4.2-alpine",
   "wiremockImage": "wiremock/wiremock:3.13.1",
-  "k6": "v1.6.1 (stage 1에서는 실행하지 않음)",
-  "dockerCli": "unavailable (권한 제한으로 버전 조회하지 않음)",
-  "dockerComposeCli": "unavailable (권한 제한으로 버전 조회하지 않음)",
-  "notes": "버전과 시스템 정보는 측정된 값만 기록했으며, 성능 측정 결과가 아니다."
+  "k6": "k6 v1.6.1+dirty (commit/2ac2bb560e-dirty, go1.25.7, linux/amd64)",
+  "dockerCli": "29.7.2",
+  "dockerEngine": "29.7.2",
+  "dockerComposeCli": "5.5.1",
+  "appCpuLimit": 1.0,
+  "appMemoryLimitBytes": 536870912,
+  "postgresCpuLimit": 1.0,
+  "postgresMemoryLimitBytes": 1073741824,
+  "redisCpuLimit": 0.5,
+  "redisMemoryLimitBytes": 268435456,
+  "k6CpuLimit": 1.0,
+  "k6MemoryLimitBytes": 536870912,
+  "javaToolOptions": "-XX:MaxRAMPercentage=75.0 -XX:ActiveProcessorCount=1",
+  "rps": 100,
+  "warmupSeconds": 5,
+  "measurementSeconds": 30,
+  "repetitions": 3,
+  "measurementBatches": [
+    {
+      "kind": "100-rps-main",
+      "runStamp": "20260913-150257",
+      "runs": 12
+    },
+    {
+      "kind": "exact-nth-alert",
+      "runStamp": "20260913-151754",
+      "runs": 6
+    },
+    {
+      "kind": "final-explain-refresh",
+      "runStamp": "20260913-153211",
+      "runs": 2
+    }
+  ],
+  "cpuUsageSampling": "not collected; container resource limits and host hardware are recorded",
+  "notes": "Synthetic local data only. Each run truncates benchmark tables, flushes Redis when active, and resets the WireMock request journal."
 }

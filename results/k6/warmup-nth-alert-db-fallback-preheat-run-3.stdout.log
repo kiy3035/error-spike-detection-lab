@@ -1,0 +1,43 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/error-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 15s max duration (incl. graceful stop):
+              * warmup_nth_alert_db_fallback_preheat_run_3: 100.00 iterations/s for 5s (maxVUs: 200-1000, gracefulStop: 10s)
+
+
+running (00.9s), 0091/0200 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac...   [  18% ] 0091/0200 VUs  0.9s/5s  100.00 iters/s
+
+running (01.9s), 0191/0200 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac...   [  38% ] 0191/0200 VUs  1.9s/5s  100.00 iters/s
+
+running (02.9s), 0245/0246 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac...   [  58% ] 0245/0246 VUs  2.9s/5s  100.00 iters/s
+
+running (03.9s), 0295/0296 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac...   [  78% ] 0295/0296 VUs  3.9s/5s  100.00 iters/s
+
+running (04.9s), 0345/0346 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac...   [  98% ] 0345/0346 VUs  4.9s/5s  100.00 iters/s
+
+running (05.9s), 0350/0351 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac... ↓ [ 100% ] 0350/0350 VUs  5s  100.00 iters/s
+
+running (06.9s), 0350/0351 VUs, 0 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac... ↓ [ 100% ] 0350/0350 VUs  5s  100.00 iters/s
+
+running (07.9s), 0172/0351 VUs, 178 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac... ↓ [ 100% ] 0350/0350 VUs  5s  100.00 iters/s
+warmup_nth_alert_db_fallback_preheat_run_3 summary saved.
+
+running (08.8s), 0000/0351 VUs, 350 complete and 0 interrupted iterations
+warmup_nth_alert_db_fallbac... ✓ [ 100% ] 0000/0351 VUs  5s  100.00 iters/s

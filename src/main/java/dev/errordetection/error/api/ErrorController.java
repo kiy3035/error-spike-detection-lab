@@ -52,6 +52,7 @@ public class ErrorController {
                 saved.getId(),
                 saved.getReceivedAt(),
                 counter.path(),
+                counter.durationNanos(),
                 counter.count(),
                 alert.thresholdExceeded(),
                 alert.cooldownAcquired(),

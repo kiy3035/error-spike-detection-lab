@@ -1,0 +1,62 @@
+services:
+  postgres:
+    cpus: 1.0
+    mem_limit: 1g
+
+  redis:
+    cpus: 0.5
+    mem_limit: 256m
+
+  wiremock:
+    cpus: 0.5
+    mem_limit: 256m
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${APP_IMAGE:?Set APP_IMAGE}
+    environment:
+      SPRING_PROFILES_ACTIVE: ${APP_PROFILES:-local}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-error_detection}
+      DB_USER: ${DB_USER:-error_app}
+      DB_PASSWORD: ${DB_PASSWORD:-local-only-password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_COMMAND_TIMEOUT: 100ms
+      NOTIFICATION_BASE_URL: http://wiremock:8080
+      SERVER_PORT: 8080
+      JAVA_TOOL_OPTIONS: ${APP_JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=75.0 -XX:ActiveProcessorCount=1}
+    ports:
+      - "127.0.0.1:${APP_PORT:-18083}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      wiremock:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+    restart: "no"
+
+  k6:
+    image: grafana/k6:1.6.1
+    environment:
+      BASE_URL: http://app:8080
+      RPS: ${K6_RPS:-100}
+      DURATION: ${K6_DURATION:-30s}
+      SOURCE: ${K6_SOURCE:-stage5-source}
+      RUN_ID: ${K6_RUN_ID:-stage5-run}
+      EXPECTED_COUNT_PATH: ${K6_EXPECTED_COUNT_PATH:-REDIS}
+      SCENARIO_NAME: ${K6_SCENARIO_NAME:-measurement}
+      SUMMARY_PATH: ${K6_SUMMARY_PATH:-/results/k6/summary.json}
+      ALLOW_DROPPED_ITERATIONS: ${K6_ALLOW_DROPPED_ITERATIONS:-false}
+      NTH_MODE: ${K6_NTH_MODE:-false}
+    volumes:
+      - ./k6:/scripts:ro
+      - ${PERFORMANCE_RESULTS_DIR:?Set PERFORMANCE_RESULTS_DIR}:/results
+    cpus: 1.0
+    mem_limit: 512m
+    profiles: ["measurement"]
+    restart: "no"

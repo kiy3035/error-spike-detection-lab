@@ -1,0 +1,109 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/error-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 40s max duration (incl. graceful stop):
+              * redis_cooldown_off_run_2: 100.00 iterations/s for 30s (maxVUs: 200-1000, gracefulStop: 10s)
+
+
+running (01.0s), 0000/0200 VUs, 95 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [   3% ] 0000/0200 VUs  01.0s/30s  100.00 iters/s
+
+running (02.0s), 0002/0200 VUs, 194 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [   7% ] 0002/0200 VUs  02.0s/30s  100.00 iters/s
+
+running (03.0s), 0002/0200 VUs, 294 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  10% ] 0002/0200 VUs  03.0s/30s  100.00 iters/s
+
+running (04.0s), 0000/0200 VUs, 395 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  13% ] 0000/0200 VUs  04.0s/30s  100.00 iters/s
+
+running (05.0s), 0001/0200 VUs, 495 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  17% ] 0001/0200 VUs  05.0s/30s  100.00 iters/s
+
+running (06.0s), 0001/0200 VUs, 595 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  20% ] 0001/0200 VUs  06.0s/30s  100.00 iters/s
+
+running (07.0s), 0001/0200 VUs, 695 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  23% ] 0001/0200 VUs  07.0s/30s  100.00 iters/s
+
+running (08.0s), 0001/0200 VUs, 795 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  27% ] 0001/0200 VUs  08.0s/30s  100.00 iters/s
+
+running (09.0s), 0001/0200 VUs, 895 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  30% ] 0001/0200 VUs  09.0s/30s  100.00 iters/s
+
+running (10.0s), 0001/0200 VUs, 995 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  33% ] 0001/0200 VUs  10.0s/30s  100.00 iters/s
+
+running (11.0s), 0001/0200 VUs, 1095 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  37% ] 0001/0200 VUs  11.0s/30s  100.00 iters/s
+
+running (12.0s), 0001/0200 VUs, 1195 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  40% ] 0001/0200 VUs  12.0s/30s  100.00 iters/s
+
+running (13.0s), 0001/0200 VUs, 1295 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  43% ] 0001/0200 VUs  13.0s/30s  100.00 iters/s
+
+running (14.0s), 0001/0200 VUs, 1395 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  47% ] 0001/0200 VUs  14.0s/30s  100.00 iters/s
+
+running (15.0s), 0000/0200 VUs, 1495 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  50% ] 0000/0200 VUs  15.0s/30s  100.00 iters/s
+
+running (16.0s), 0001/0200 VUs, 1595 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  53% ] 0001/0200 VUs  16.0s/30s  100.00 iters/s
+
+running (17.0s), 0001/0200 VUs, 1695 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  57% ] 0001/0200 VUs  17.0s/30s  100.00 iters/s
+
+running (18.0s), 0001/0200 VUs, 1795 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  60% ] 0001/0200 VUs  18.0s/30s  100.00 iters/s
+
+running (19.0s), 0001/0200 VUs, 1895 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  63% ] 0001/0200 VUs  19.0s/30s  100.00 iters/s
+
+running (20.0s), 0001/0200 VUs, 1995 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  67% ] 0001/0200 VUs  20.0s/30s  100.00 iters/s
+
+running (21.0s), 0001/0200 VUs, 2095 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  70% ] 0001/0200 VUs  21.0s/30s  100.00 iters/s
+
+running (22.0s), 0001/0200 VUs, 2195 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  73% ] 0001/0200 VUs  22.0s/30s  100.00 iters/s
+
+running (23.0s), 0001/0200 VUs, 2295 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  77% ] 0001/0200 VUs  23.0s/30s  100.00 iters/s
+
+running (24.0s), 0001/0200 VUs, 2395 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  80% ] 0001/0200 VUs  24.0s/30s  100.00 iters/s
+
+running (25.0s), 0001/0200 VUs, 2495 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  83% ] 0001/0200 VUs  25.0s/30s  100.00 iters/s
+
+running (26.0s), 0001/0200 VUs, 2595 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  87% ] 0001/0200 VUs  26.0s/30s  100.00 iters/s
+
+running (27.0s), 0001/0200 VUs, 2695 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  90% ] 0001/0200 VUs  27.0s/30s  100.00 iters/s
+
+running (28.0s), 0001/0200 VUs, 2795 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  93% ] 0001/0200 VUs  28.0s/30s  100.00 iters/s
+
+running (28.9s), 0001/0200 VUs, 2895 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [  97% ] 0001/0200 VUs  29.0s/30s  100.00 iters/s
+
+running (29.9s), 0001/0200 VUs, 2995 complete and 0 interrupted iterations
+redis_cooldown_off_run_2   [ 100% ] 0001/0200 VUs  30.0s/30s  100.00 iters/s
+redis_cooldown_off_run_2 summary saved.
+
+running (30.0s), 0000/0200 VUs, 3001 complete and 0 interrupted iterations
+redis_cooldown_off_run_2 ✓ [ 100% ] 0000/0200 VUs  30s  100.00 iters/s

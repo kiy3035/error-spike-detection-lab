@@ -1,0 +1,109 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/error-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 40s max duration (incl. graceful stop):
+              * db_fallback_index_off_run_2: 100.00 iterations/s for 30s (maxVUs: 200-1000, gracefulStop: 10s)
+
+
+running (01.0s), 0001/0200 VUs, 95 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [   3% ] 0002/0200 VUs  01.0s/30s  100.00 iters/s
+
+running (02.0s), 0000/0200 VUs, 196 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [   7% ] 0000/0200 VUs  02.0s/30s  100.00 iters/s
+
+running (03.0s), 0001/0200 VUs, 296 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  10% ] 0001/0200 VUs  03.0s/30s  100.00 iters/s
+
+running (04.0s), 0001/0200 VUs, 396 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  13% ] 0001/0200 VUs  04.0s/30s  100.00 iters/s
+
+running (05.0s), 0017/0200 VUs, 480 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  17% ] 0017/0200 VUs  05.0s/30s  100.00 iters/s
+
+running (06.0s), 0117/0200 VUs, 480 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  20% ] 0117/0200 VUs  06.0s/30s  100.00 iters/s
+
+running (07.0s), 0208/0208 VUs, 480 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  23% ] 0208/0208 VUs  07.0s/30s  100.00 iters/s
+
+running (08.0s), 0258/0258 VUs, 480 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  27% ] 0258/0258 VUs  08.0s/30s  100.00 iters/s
+
+running (09.0s), 0260/0298 VUs, 538 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  30% ] 0260/0298 VUs  09.0s/30s  100.00 iters/s
+
+running (10.0s), 0106/0298 VUs, 792 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  33% ] 0106/0298 VUs  10.0s/30s  100.00 iters/s
+
+running (11.0s), 0000/0298 VUs, 998 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  37% ] 0000/0298 VUs  11.0s/30s  100.00 iters/s
+
+running (12.0s), 0000/0298 VUs, 1098 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  40% ] 0001/0298 VUs  12.0s/30s  100.00 iters/s
+
+running (13.0s), 0001/0298 VUs, 1198 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  43% ] 0001/0298 VUs  13.0s/30s  100.00 iters/s
+
+running (14.0s), 0001/0298 VUs, 1298 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  47% ] 0001/0298 VUs  14.0s/30s  100.00 iters/s
+
+running (15.0s), 0001/0298 VUs, 1398 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  50% ] 0001/0298 VUs  15.0s/30s  100.00 iters/s
+
+running (16.0s), 0001/0298 VUs, 1498 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  53% ] 0001/0298 VUs  16.0s/30s  100.00 iters/s
+
+running (17.0s), 0002/0298 VUs, 1597 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  57% ] 0002/0298 VUs  17.0s/30s  100.00 iters/s
+
+running (18.0s), 0001/0298 VUs, 1698 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  60% ] 0001/0298 VUs  18.0s/30s  100.00 iters/s
+
+running (19.0s), 0020/0298 VUs, 1778 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  63% ] 0020/0298 VUs  19.0s/30s  100.00 iters/s
+
+running (20.0s), 0121/0298 VUs, 1778 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  67% ] 0121/0298 VUs  20.0s/30s  100.00 iters/s
+
+running (21.0s), 0221/0298 VUs, 1778 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  70% ] 0221/0298 VUs  21.0s/30s  100.00 iters/s
+
+running (22.0s), 0309/0309 VUs, 1778 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  73% ] 0309/0309 VUs  22.0s/30s  100.00 iters/s
+
+running (23.0s), 0292/0348 VUs, 1856 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  77% ] 0292/0348 VUs  23.0s/30s  100.00 iters/s
+
+running (24.0s), 0006/0348 VUs, 2243 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  80% ] 0006/0348 VUs  24.0s/30s  100.00 iters/s
+
+running (25.0s), 0001/0348 VUs, 2348 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  83% ] 0001/0348 VUs  25.0s/30s  100.00 iters/s
+
+running (26.0s), 0001/0348 VUs, 2448 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  87% ] 0001/0348 VUs  26.0s/30s  100.00 iters/s
+
+running (27.0s), 0001/0348 VUs, 2548 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  90% ] 0001/0348 VUs  27.0s/30s  100.00 iters/s
+
+running (28.0s), 0001/0348 VUs, 2648 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  93% ] 0001/0348 VUs  28.0s/30s  100.00 iters/s
+
+running (29.0s), 0001/0348 VUs, 2748 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [  97% ] 0001/0348 VUs  29.0s/30s  100.00 iters/s
+
+running (30.0s), 0001/0348 VUs, 2848 complete and 0 interrupted iterations
+db_fallback_index_off_run_2   [ 100% ] 0001/0348 VUs  30.0s/30s  100.00 iters/s
+db_fallback_index_off_run_2 summary saved.
+
+running (30.0s), 0000/0348 VUs, 2853 complete and 0 interrupted iterations
+db_fallback_index_off_run_2 ✓ [ 100% ] 0000/0348 VUs  30s  100.00 iters/s
